@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Waypoint — Manage Bookmarks</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="manage.css">
+</head>
+<body>
+  <div id="app">
+    <header class="manage-header">
+      <h1 class="manage-title">Waypoint</h1>
+      <div class="manage-header-actions">
+        <input type="text" class="manage-search" id="search-input" placeholder="Search bookmarks...">
+      </div>
+    </header>
+
+    <!-- Breadcrumb for drill-down -->
+    <div class="treemap-breadcrumb" id="breadcrumb"></div>
+
+    <!-- Treemap view (default) -->
+    <div class="treemap-container" id="treemap"></div>
+
+    <!-- List view (shown on search or drill-down to leaf) -->
+    <div class="list-view" id="list-view" style="display:none">
+      <div class="manage-toolbar">
+        <div class="manage-toolbar-left">
+          <label class="manage-select-all-label">
+            <input type="checkbox" id="select-all">
+            <span id="selection-count">0 selected</span>
+          </label>
+        </div>
+        <div class="manage-toolbar-right">
+          <button class="manage-btn" id="btn-add-tag" disabled>+ Tag</button>
+          <button class="manage-btn" id="btn-remove-tag" disabled>- Tag</button>
+          <button class="manage-btn manage-btn-danger" id="btn-delete" disabled>Delete</button>
+          <span class="manage-separator"></span>
+          <button class="manage-btn manage-btn-danger" id="btn-delete-all">Delete All</button>
+          <button class="manage-btn" id="btn-export">Export</button>
+        </div>
+      </div>
+      <div class="manage-list" id="bookmark-list"></div>
+    </div>
+  </div>
+
+  <!-- Tag input dialog -->
+  <div class="manage-overlay" id="tag-dialog" style="display:none">
+    <div class="manage-dialog">
+      <p class="manage-dialog-title" id="tag-dialog-title">Add tag</p>
+      <input type="text" class="manage-dialog-input" id="tag-dialog-input" placeholder="Tag name...">
+      <div class="manage-dialog-actions">
+        <button class="manage-btn" id="tag-dialog-cancel">Cancel</button>
+        <button class="manage-btn manage-btn-primary" id="tag-dialog-confirm">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="manage-overlay" id="confirm-dialog" style="display:none">
+    <div class="manage-dialog">
+      <p class="manage-dialog-title" id="confirm-dialog-title">Are you sure?</p>
+      <p class="manage-dialog-subtitle" id="confirm-dialog-subtitle"></p>
+      <div class="manage-dialog-actions">
+        <button class="manage-btn" id="confirm-dialog-cancel">Cancel</button>
+        <button class="manage-btn manage-btn-danger" id="confirm-dialog-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="manage.js"></script>
+</body>
+</html>
