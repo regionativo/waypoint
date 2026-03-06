@@ -29,16 +29,11 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
     updateSelection();
   }
 
-  function openSelected(newTab = false) {
+  function openSelected() {
     if (selectedIndex < 0 || selectedIndex >= currentBookmarks.length) return false;
     const bk = currentBookmarks[selectedIndex];
     incrementVisitCount(bk.id);
-    if (newTab) {
-      chrome.tabs.create({ url: bk.url });
-    } else {
-      chrome.tabs.update({ url: bk.url });
-      window.close();
-    }
+    chrome.tabs.create({ url: bk.url });
     return true;
   }
 
@@ -76,7 +71,7 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
       item.className = 'bookmark-item';
 
       const favicon = document.createElement('img');
-      favicon.className = 'bookmark-favicon';
+      favicon.className = `bookmark-favicon${bk.faviconLight ? ' favicon-light' : ''}`;
       favicon.src = bk.favIconUrl || `https://www.google.com/s2/favicons?domain=${bk.domain}&sz=16`;
       favicon.width = 16;
       favicon.height = 16;
@@ -142,15 +137,10 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
       item.appendChild(info);
       item.appendChild(actions);
 
-      // Click to open
-      item.addEventListener('click', (e) => {
+      // Click to open in new tab
+      item.addEventListener('click', () => {
         incrementVisitCount(bk.id);
-        if (e.ctrlKey || e.metaKey) {
-          chrome.tabs.create({ url: bk.url });
-        } else {
-          chrome.tabs.update({ url: bk.url });
-          window.close();
-        }
+        chrome.tabs.create({ url: bk.url });
       });
 
       item.addEventListener('auxclick', (e) => {

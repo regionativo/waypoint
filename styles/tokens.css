@@ -1,4 +1,6 @@
-:root {
+/* ===== Default Theme ===== */
+:root,
+[data-theme="default"] {
   /* Light, clean backgrounds */
   --bg-body: #f4f5f7;
   --bg-header: #ffffff;
@@ -59,6 +61,7 @@
   --border: #e5e7eb;
   --border-light: #f0f1f3;
   --border-focus: var(--blue);
+  --border-width: 1.5px;
 
   /* Danger */
   --danger: #ef4444;
@@ -100,4 +103,145 @@
   /* Transitions */
   --ease-fast: 80ms ease;
   --ease: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Forge Theme — Neo-Brutalist ===== */
+[data-theme="forge"] {
+  --bg-body: #f5f0e8;
+  --bg-header: #0a0a0a;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fffbf0;
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+  --bg-section: #f5f0e8;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  --text-primary: #0a0a0a;
+  --text-secondary: #374151;
+  --text-dim: #6b7280;
+  --text-bright: #0a0a0a;
+
+  --blue: #f59e0b;
+  --blue-light: #fbbf24;
+  --blue-pale: #fef3c7;
+  --blue-bg: #fffbf0;
+
+  --amber: #f59e0b;
+  --amber-light: #fbbf24;
+  --amber-pale: #fef3c7;
+  --amber-bg: #fffbf0;
+
+  --teal: #0d9488;
+  --teal-pale: #ccfbf1;
+  --purple: #7c3aed;
+  --purple-pale: #ede9fe;
+  --rose: #e11d48;
+  --rose-pale: #ffe4e6;
+  --green: #16a34a;
+  --green-pale: #dcfce7;
+  --orange: #ea580c;
+  --orange-pale: #ffedd5;
+
+  --accent-1: #f59e0b;
+  --accent-2: #0a0a0a;
+  --accent-3: #e11d48;
+  --accent-4: #0d9488;
+  --accent-5: #7c3aed;
+  --accent-6: #ea580c;
+
+  --tag-1: #0a0a0a; --tag-1-bg: #f59e0b;
+  --tag-2: #fff; --tag-2-bg: #0a0a0a;
+  --tag-3: #fff; --tag-3-bg: #e11d48;
+  --tag-4: #fff; --tag-4-bg: #0d9488;
+  --tag-5: #fff; --tag-5-bg: #7c3aed;
+  --tag-6: #0a0a0a; --tag-6-bg: #fbbf24;
+
+  --border: #0a0a0a;
+  --border-light: #d1d5db;
+  --border-focus: #f59e0b;
+  --border-width: 2px;
+
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+
+  --shadow-card: 3px 3px 0 0 #0a0a0a;
+  --shadow-card-hover: 4px 4px 0 0 #0a0a0a;
+  --shadow-lg: 6px 6px 0 0 #0a0a0a;
+  --shadow-blue: 3px 3px 0 0 #f59e0b;
+
+  --weight-bold: 700;
+
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-xl: 10px;
+  --r-full: 4px;
+
+  --ease-fast: 100ms ease;
+  --ease: 100ms ease;
+}
+
+/* ===== Cinco de Mayo — Festive & Vibrant ===== */
+[data-theme="cinco"] {
+  --bg-body: #fef9f0;
+  --bg-header: #006847;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fefaf2;
+  --bg-input: #fdf6ec;
+  --bg-input-focus: #ffffff;
+  --bg-section: #fef9f0;
+  --bg-overlay: rgba(0, 54, 36, 0.5);
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-dim: #8a8a7a;
+  --text-bright: #006847;
+
+  --blue: #006847;
+  --blue-light: #2e8b67;
+  --blue-pale: #d4f0e2;
+  --blue-bg: #edf8f2;
+
+  --amber: #f4a100;
+  --amber-light: #ffc233;
+  --amber-pale: #fff3d0;
+  --amber-bg: #fffbeb;
+
+  --teal: #006847;
+  --teal-pale: #d4f0e2;
+  --purple: #6b2fa0;
+  --purple-pale: #f0e4fb;
+  --rose: #ce1126;
+  --rose-pale: #fde0e4;
+  --green: #006847;
+  --green-pale: #d4f0e2;
+  --orange: #e8792b;
+  --orange-pale: #fde8d5;
+
+  --accent-1: #006847;
+  --accent-2: #ce1126;
+  --accent-3: #f4a100;
+  --accent-4: #6b2fa0;
+  --accent-5: #e8792b;
+  --accent-6: #d4508b;
+
+  --tag-1: #fff; --tag-1-bg: #006847;
+  --tag-2: #fff; --tag-2-bg: #ce1126;
+  --tag-3: #1a1a1a; --tag-3-bg: #ffc233;
+  --tag-4: #fff; --tag-4-bg: #6b2fa0;
+  --tag-5: #fff; --tag-5-bg: #e8792b;
+  --tag-6: #fff; --tag-6-bg: #d4508b;
+
+  --border: #d6cbb8;
+  --border-light: #ece5d8;
+  --border-focus: #006847;
+  --border-width: 1.5px;
+
+  --danger: #ce1126;
+  --danger-bg: #fef0f1;
+
+  --shadow-card: 0 2px 6px rgba(0, 54, 36, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 6px 16px rgba(0, 54, 36, 0.12), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 40px rgba(0, 54, 36, 0.16);
+  --shadow-blue: 0 0 0 3px rgba(0, 104, 71, 0.2);
 }

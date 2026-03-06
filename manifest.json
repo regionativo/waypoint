@@ -8,6 +8,10 @@
     "bookmarks",
     "activeTab"
   ],
+  "host_permissions": [
+    "https://www.google.com/*",
+    "https://*.gstatic.com/*"
+  ],
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {

@@ -6,8 +6,8 @@ import { createSearchBar } from './components/search-bar.js';
 import { createSpeedDial } from './components/speed-dial.js';
 import { createBookmarkList } from './components/bookmark-list.js';
 import { createCaptureForm } from './components/capture-form.js';
-import { importChromeBookmarks, getImportPreview, importFromJSON } from '../lib/importer.js';
 import { get } from '../lib/storage.js';
+import { loadTheme } from '../lib/theme.js';
 
 const app = document.getElementById('app');
 let currentView = 'main'; // 'main' | 'capture'
@@ -19,8 +19,6 @@ const searchBar = createSearchBar({
   onSearch: handleSearch,
   onClear: handleClearSearch,
   onCapture: showCaptureForCurrentTab,
-  onImport: handleImport,
-  onImportFile: handleImportFile,
 });
 
 const speedDial = createSpeedDial({
@@ -230,68 +228,6 @@ function confirmDelete(bookmark) {
   resetDeleteOverlay();
   pendingDeleteBookmark = bookmark;
   deleteOverlay.querySelector('.delete-title-preview').textContent = bookmark.title;
-  deleteOverlay.style.display = 'flex';
-}
-
-// --- Import ---
-
-async function handleImport() {
-  const preview = await getImportPreview();
-  const msg = `Found ${preview.totalBookmarks} bookmarks (${preview.uniqueUrls} unique URLs, ${preview.uniqueTags} tags). Import?`;
-
-  // Simple confirm using the delete overlay pattern
-  pendingDeleteBookmark = null;
-  const dialog = deleteOverlay.querySelector('.delete-dialog');
-  deleteOverlay.querySelector('.delete-message').textContent = msg;
-  deleteOverlay.querySelector('.delete-title-preview').textContent = '';
-  deleteOverlay.querySelector('.delete-cancel-btn').textContent = 'Cancel';
-
-  const confirmBtn = deleteOverlay.querySelector('.delete-confirm-btn');
-  confirmBtn.textContent = 'Import';
-  confirmBtn.className = 'delete-confirm-btn import-confirm';
-
-  // Replace confirm handler for import
-  const newConfirm = confirmBtn.cloneNode(true);
-  confirmBtn.replaceWith(newConfirm);
-  newConfirm.addEventListener('click', async () => {
-    newConfirm.textContent = 'Importing...';
-    newConfirm.disabled = true;
-    await importChromeBookmarks();
-    deleteOverlay.style.display = 'none';
-    newConfirm.textContent = 'Delete';
-    newConfirm.disabled = false;
-    newConfirm.className = 'delete-confirm-btn';
-    // Restore original handler
-    resetDeleteOverlay();
-    await refreshMainView();
-  });
-
-  deleteOverlay.style.display = 'flex';
-}
-
-async function handleImportFile(jsonData) {
-  const msg = `Import ${jsonData.length} bookmarks from JSON file?`;
-
-  pendingDeleteBookmark = null;
-  deleteOverlay.querySelector('.delete-message').textContent = msg;
-  deleteOverlay.querySelector('.delete-title-preview').textContent = '';
-  deleteOverlay.querySelector('.delete-cancel-btn').textContent = 'Cancel';
-
-  const confirmBtn = deleteOverlay.querySelector('.delete-confirm-btn');
-  const newConfirm = confirmBtn.cloneNode(true);
-  confirmBtn.replaceWith(newConfirm);
-  newConfirm.textContent = 'Import';
-  newConfirm.className = 'delete-confirm-btn import-confirm';
-
-  newConfirm.addEventListener('click', async () => {
-    newConfirm.textContent = 'Importing...';
-    newConfirm.disabled = true;
-    const result = await importFromJSON(jsonData);
-    deleteOverlay.style.display = 'none';
-    resetDeleteOverlay();
-    await refreshMainView();
-  });
-
   deleteOverlay.style.display = 'flex';
 }
 
@@ -523,7 +459,7 @@ document.addEventListener('keydown', (e) => {
         return;
       }
     }
-    const opened = bookmarkList.openSelected(e.metaKey || e.ctrlKey);
+    const opened = bookmarkList.openSelected();
     if (opened) {
       e.preventDefault();
       return;
@@ -590,8 +526,7 @@ async function openSpeedDialSlot(slot) {
   const slots = await getSpeedDial();
   const bk = slots[slot];
   if (bk) {
-    chrome.tabs.update({ url: bk.url });
-    window.close();
+    chrome.tabs.create({ url: bk.url });
   }
 }
 
@@ -609,6 +544,7 @@ async function refreshMainView() {
 
 async function init() {
   await initialize();
+  await loadTheme();
   showMainView();
   await refreshMainView();
 }

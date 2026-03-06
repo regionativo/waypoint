@@ -35,8 +35,15 @@ body {
   z-index: 10;
 }
 
-.search-input {
+.search-input-wrap {
   flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
   padding: 10px 14px;
   background: var(--bg-input);
   border: 1.5px solid var(--border);
@@ -46,6 +53,30 @@ body {
   font-family: var(--font);
   outline: none;
   transition: all var(--ease);
+}
+
+.search-clear-btn {
+  display: none;
+  position: absolute;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-card-hover);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all var(--ease-fast);
+}
+
+.search-clear-btn:hover {
+  background: var(--border);
+  color: var(--text-primary);
 }
 
 .search-input:focus {
@@ -831,10 +862,6 @@ body {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
-.delete-confirm-btn.import-confirm {
-  background: var(--blue);
-}
-
 /* ===== Tag Input ===== */
 .tag-input-container {
   position: relative;
@@ -934,6 +961,88 @@ body {
 .tag-suggestion-item.selected {
   background: var(--blue-bg);
   color: var(--blue);
+}
+
+/* ===== Light favicon fix ===== */
+.favicon-light {
+  background: #1a1a1a;
+  border-radius: 5px;
+  padding: 2px;
+}
+
+/* ===== Forge theme overrides ===== */
+[data-theme="forge"] .search-bar {
+  background: #0a0a0a;
+}
+
+[data-theme="forge"] .search-bar .capture-btn,
+[data-theme="forge"] .search-bar .import-btn {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="forge"] .search-bar .capture-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: none;
+}
+
+[data-theme="forge"] .search-bar .capture-btn.bookmarked {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+[data-theme="forge"] .search-bar .import-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+[data-theme="forge"] .bookmark-item {
+  border-width: 2px;
+  border-left-width: 4px;
+}
+
+[data-theme="forge"] .bookmark-item:hover {
+  transform: translate(-1px, -1px);
+}
+
+[data-theme="forge"] .bookmark-item:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 0 #0a0a0a;
+}
+
+[data-theme="forge"] .speed-dial-tile {
+  border-width: 2px;
+}
+
+[data-theme="forge"] .speed-dial-tile.filled:hover {
+  transform: translate(-1px, -1px);
+}
+
+[data-theme="forge"] .tag-grid-btn {
+  border-width: 2px;
+  border-color: #0a0a0a;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 0 #0a0a0a;
+}
+
+[data-theme="forge"] .tag-grid-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 #0a0a0a;
+  filter: none;
+}
+
+[data-theme="forge"] .tag-grid-btn.selected {
+  box-shadow: 3px 3px 0 0 #f59e0b;
+  border-color: #f59e0b;
+}
+
+[data-theme="forge"] .delete-dialog {
+  border: 2px solid #0a0a0a;
 }
 
 /* ===== Scrollbar ===== */

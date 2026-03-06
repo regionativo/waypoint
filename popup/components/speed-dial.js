@@ -30,7 +30,7 @@ export function createSpeedDial({ onEdit }) {
       label.textContent = num;
 
       const favicon = document.createElement('img');
-      favicon.className = 'speed-dial-favicon';
+      favicon.className = `speed-dial-favicon${slot.faviconLight ? ' favicon-light' : ''}`;
       favicon.src = slot.favIconUrl || `https://www.google.com/s2/favicons?domain=${slot.domain}&sz=16`;
       favicon.width = 16;
       favicon.height = 16;
@@ -59,8 +59,7 @@ export function createSpeedDial({ onEdit }) {
 
       tile.addEventListener('click', () => {
         incrementVisitCount(slot.id);
-        chrome.tabs.update({ url: slot.url });
-        window.close();
+        chrome.tabs.create({ url: slot.url });
       });
 
       tile.addEventListener('contextmenu', (e) => {
