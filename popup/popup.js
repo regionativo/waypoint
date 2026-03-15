@@ -90,8 +90,12 @@ deleteOverlay.querySelector('.delete-confirm-btn').addEventListener('click', asy
 const mainContainer = document.createElement('div');
 mainContainer.id = 'main-view';
 
+const recentSection = document.createElement('div');
+recentSection.className = 'recent-section';
+
 mainContainer.appendChild(searchBar.element);
 mainContainer.appendChild(speedDial.element);
+mainContainer.appendChild(recentSection);
 mainContainer.appendChild(tagGrid);
 mainContainer.appendChild(backToTagsBtn);
 mainContainer.appendChild(bookmarkList.element);
@@ -144,14 +148,18 @@ async function updateCurrentPageIndicator() {
 // --- View toggling ---
 
 let selectedTagIndex = -1;
+let selectedRecentIndex = -1;
+let recentBookmarks = [];
 let tagGridVisible = false;
 
 function showTagGrid() {
   tagGrid.style.display = 'flex';
   backToTagsBtn.style.display = 'none';
   bookmarkList.element.style.display = 'none';
+  recentSection.style.display = '';
   tagGridVisible = true;
   selectedTagIndex = -1;
+  selectedRecentIndex = -1;
   renderTagGrid();
 }
 
@@ -159,8 +167,10 @@ function showBookmarkList() {
   tagGrid.style.display = 'none';
   backToTagsBtn.style.display = 'flex';
   bookmarkList.element.style.display = 'block';
+  recentSection.style.display = 'none';
   tagGridVisible = false;
   selectedTagIndex = -1;
+  selectedRecentIndex = -1;
 }
 
 function updateTagGridSelection() {
@@ -424,10 +434,36 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
     e.preventDefault();
     if (tagGridVisible) {
-      const btns = tagGrid.querySelectorAll('.tag-grid-btn');
-      if (btns.length > 0) {
-        selectedTagIndex = Math.min(selectedTagIndex + 1, btns.length - 1);
-        updateTagGridSelection();
+      // Flow: recents → tags
+      if (selectedRecentIndex < recentBookmarks.length - 1 && recentBookmarks.length > 0) {
+        // Still navigating within recents
+        if (selectedTagIndex >= 0) {
+          // Already in tags, continue in tags
+          const btns = tagGrid.querySelectorAll('.tag-grid-btn');
+          if (btns.length > 0) {
+            selectedTagIndex = Math.min(selectedTagIndex + 1, btns.length - 1);
+            updateTagGridSelection();
+          }
+        } else {
+          selectedRecentIndex++;
+          updateRecentSelection();
+        }
+      } else if (selectedTagIndex < 0) {
+        // Move from recents to tags
+        selectedRecentIndex = -1;
+        updateRecentSelection();
+        const btns = tagGrid.querySelectorAll('.tag-grid-btn');
+        if (btns.length > 0) {
+          selectedTagIndex = 0;
+          updateTagGridSelection();
+        }
+      } else {
+        // Navigate within tags
+        const btns = tagGrid.querySelectorAll('.tag-grid-btn');
+        if (btns.length > 0) {
+          selectedTagIndex = Math.min(selectedTagIndex + 1, btns.length - 1);
+          updateTagGridSelection();
+        }
       }
     } else {
       bookmarkList.selectNext();
@@ -438,10 +474,25 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
     e.preventDefault();
     if (tagGridVisible) {
-      const btns = tagGrid.querySelectorAll('.tag-grid-btn');
-      if (btns.length > 0) {
-        selectedTagIndex = Math.max(selectedTagIndex - 1, 0);
+      if (selectedTagIndex > 0) {
+        // Navigate within tags
+        selectedTagIndex--;
         updateTagGridSelection();
+      } else if (selectedTagIndex === 0) {
+        // Move from tags back to recents
+        selectedTagIndex = -1;
+        updateTagGridSelection();
+        if (recentBookmarks.length > 0) {
+          selectedRecentIndex = recentBookmarks.length - 1;
+          updateRecentSelection();
+        }
+      } else if (selectedRecentIndex > 0) {
+        // Navigate within recents
+        selectedRecentIndex--;
+        updateRecentSelection();
+      } else if (selectedRecentIndex === 0) {
+        selectedRecentIndex = -1;
+        updateRecentSelection();
       }
     } else {
       bookmarkList.selectPrev();
@@ -449,8 +500,13 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  // Enter to open selected tag or bookmark
+  // Enter to open selected recent, tag, or bookmark
   if (e.key === 'Enter') {
+    if (selectedRecentIndex >= 0 && selectedRecentIndex < recentBookmarks.length) {
+      e.preventDefault();
+      chrome.tabs.create({ url: recentBookmarks[selectedRecentIndex].url });
+      return;
+    }
     if (tagGridVisible && selectedTagIndex >= 0) {
       const btns = tagGrid.querySelectorAll('.tag-grid-btn');
       if (btns[selectedTagIndex]) {
@@ -466,12 +522,13 @@ document.addEventListener('keydown', (e) => {
     }
   }
 
-  // Cmd/Ctrl+Y to copy selected bookmark URL
-  if (e.key === 'y' && (e.metaKey || e.ctrlKey)) {
-    const url = bookmarkList.getSelectedUrl();
+  // 'y' to yank (copy) selected bookmark URL
+  if (e.key === 'y' && !searchFocused && !e.metaKey && !e.ctrlKey) {
+    const url = getSelectedUrl();
     if (url) {
       e.preventDefault();
       navigator.clipboard.writeText(url);
+      showYankFeedback();
       return;
     }
   }
@@ -530,12 +587,98 @@ async function openSpeedDialSlot(slot) {
   }
 }
 
+// --- Yank feedback ---
+
+function showYankFeedback() {
+  let toast = document.querySelector('.yank-toast');
+  if (toast) toast.remove();
+  toast = document.createElement('div');
+  toast.className = 'yank-toast';
+  toast.textContent = 'URL copied';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 1200);
+}
+
+// --- Recent bookmarks ---
+
+function updateRecentSelection() {
+  const items = recentSection.querySelectorAll('.recent-item');
+  items.forEach((item, i) => item.classList.toggle('selected', i === selectedRecentIndex));
+  if (selectedRecentIndex >= 0 && items[selectedRecentIndex]) {
+    items[selectedRecentIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function getSelectedUrl() {
+  // Check recents first, then bookmark list
+  if (selectedRecentIndex >= 0 && selectedRecentIndex < recentBookmarks.length) {
+    return recentBookmarks[selectedRecentIndex].url;
+  }
+  return bookmarkList.getSelectedUrl();
+}
+
+async function renderRecent() {
+  const all = await getAllBookmarks();
+  recentBookmarks = all
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 3);
+
+  recentSection.innerHTML = '';
+  selectedRecentIndex = -1;
+
+  if (recentBookmarks.length === 0) return;
+
+  const label = document.createElement('div');
+  label.className = 'recent-section-label';
+  label.innerHTML = '<span class="recent-section-dot"></span> RECENT';
+  recentSection.appendChild(label);
+
+  const list = document.createElement('div');
+  list.className = 'recent-list';
+
+  for (const bk of recentBookmarks) {
+    const item = document.createElement('a');
+    item.className = 'recent-item';
+    item.href = bk.url;
+    item.title = bk.url;
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: bk.url });
+    });
+    item.addEventListener('auxclick', (e) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        chrome.tabs.create({ url: bk.url, active: false });
+      }
+    });
+
+    const favicon = document.createElement('img');
+    favicon.className = `recent-favicon${bk.faviconLight ? ' favicon-light' : ''}`;
+    favicon.src = bk.favIconUrl || `https://www.google.com/s2/favicons?domain=${bk.domain}&sz=16`;
+    favicon.width = 16;
+    favicon.height = 16;
+    favicon.alt = '';
+    favicon.onerror = () => { favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect fill="%234fc3f7" width="16" height="16" rx="3"/></svg>'; };
+
+    const title = document.createElement('span');
+    title.className = 'recent-title';
+    title.textContent = bk.title;
+
+    item.appendChild(favicon);
+    item.appendChild(title);
+    list.appendChild(item);
+  }
+
+  recentSection.appendChild(list);
+}
+
 // --- Refresh ---
 
 async function refreshMainView() {
   await speedDial.render();
   const all = await getAllBookmarks();
   await buildIndex(all);
+  await renderRecent();
   showTagGrid();
   await updateCurrentPageIndicator();
 }
