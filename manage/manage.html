@@ -37,7 +37,15 @@
               <span id="selection-count">0 selected</span>
             </label>
           </div>
-          <div class="manage-toolbar-right">
+          <div class="manage-toolbar-center">
+            <select class="manage-sort-select" id="sort-select">
+              <option value="recent-desc">Recent (newest)</option>
+              <option value="recent-asc">Recent (oldest)</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+            </select>
+          </div>
+        <div class="manage-toolbar-right">
             <button class="manage-btn" id="btn-add-tag" disabled>+ Tag</button>
             <button class="manage-btn" id="btn-remove-tag" disabled>- Tag</button>
             <button class="manage-btn manage-btn-danger" id="btn-delete" disabled>Delete</button>

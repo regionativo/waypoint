@@ -191,6 +191,13 @@ body {
   color: var(--text-secondary);
 }
 
+.tag-sidebar-speeddial {
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
 /* Tag delete button */
 .tag-sidebar-item-right {
   display: flex;
@@ -344,6 +351,40 @@ body {
   background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.manage-toolbar-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.manage-sort-select {
+  padding: 7px 28px 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-family: var(--font);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: all var(--ease);
+}
+
+.manage-sort-select:hover {
+  border-color: var(--text-dim);
+  color: var(--text-primary);
+}
+
+.manage-sort-select:focus {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-blue);
 }
 
 .manage-separator {
@@ -714,6 +755,12 @@ body {
 [data-theme="forge"] .manage-btn:hover:not(:disabled) {
   transform: translate(-1px, -1px);
   box-shadow: 2px 2px 0 0 #0a0a0a;
+}
+
+[data-theme="forge"] .manage-sort-select {
+  border-width: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 [data-theme="forge"] .manage-dialog {

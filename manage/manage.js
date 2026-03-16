@@ -1,5 +1,5 @@
 import { initialize, get, set } from '../lib/storage.js';
-import { getAllBookmarks, deleteBookmark, saveBookmark, updateFavicon } from '../lib/bookmarks.js';
+import { getAllBookmarks, deleteBookmark, saveBookmark, updateFavicon, getSpeedDial } from '../lib/bookmarks.js';
 import { normalizeTag, getAllTags, deleteTag } from '../lib/tags.js';
 import { THEMES, getTheme, setTheme, loadTheme } from '../lib/theme.js';
 import { importChromeBookmarks, getImportPreview, importFromJSON } from '../lib/importer.js';
@@ -8,6 +8,9 @@ let allBookmarks = [];
 let displayedBookmarks = [];
 let checkedIds = new Set();
 let activeTag = null; // null = show all
+let speedDialFilter = false;
+let speedDialIds = new Set();
+let currentSort = 'recent-desc';
 
 const tagListEl = document.getElementById('tag-list');
 const tagTotalCount = document.getElementById('tag-total-count');
@@ -25,6 +28,7 @@ const btnImportJson = document.getElementById('btn-import-json');
 const fileImport = document.getElementById('file-import');
 const btnImportChrome = document.getElementById('btn-import-chrome');
 const btnRefreshFavicons = document.getElementById('btn-refresh-favicons');
+const sortSelect = document.getElementById('sort-select');
 
 const tagDialog = document.getElementById('tag-dialog');
 const tagDialogTitle = document.getElementById('tag-dialog-title');
@@ -40,6 +44,9 @@ const confirmConfirm = document.getElementById('confirm-dialog-confirm');
 
 async function load() {
   allBookmarks = await getAllBookmarks();
+  // Cache speed dial bookmark IDs
+  const sd = await getSpeedDial();
+  speedDialIds = new Set(sd.filter(Boolean).map(b => b.id));
   renderSidebar();
   renderBookmarks();
 }
@@ -62,10 +69,28 @@ async function renderSidebar() {
   `;
   allItem.addEventListener('click', () => {
     activeTag = null;
+    speedDialFilter = false;
     renderSidebar();
     renderBookmarks();
   });
   tagListEl.appendChild(allItem);
+
+  // Speed Dial filter
+  if (speedDialIds.size > 0) {
+    const sdItem = document.createElement('div');
+    sdItem.className = `tag-sidebar-item tag-sidebar-speeddial ${speedDialFilter ? 'active' : ''}`;
+    sdItem.innerHTML = `
+      <span class="tag-sidebar-item-name">Speed Dial</span>
+      <span class="tag-sidebar-item-count">${speedDialIds.size}</span>
+    `;
+    sdItem.addEventListener('click', () => {
+      activeTag = null;
+      speedDialFilter = !speedDialFilter;
+      renderSidebar();
+      renderBookmarks();
+    });
+    tagListEl.appendChild(sdItem);
+  }
 
   // Bulk cleanup for single-use tags
   if (singleCount > 0) {
@@ -123,6 +148,7 @@ async function renderSidebar() {
 
     item.addEventListener('click', () => {
       activeTag = tag;
+      speedDialFilter = false;
       renderSidebar();
       renderBookmarks();
     });
@@ -135,6 +161,10 @@ async function renderSidebar() {
 function getFilteredBookmarks() {
   let bks = allBookmarks;
 
+  if (speedDialFilter) {
+    bks = bks.filter(b => speedDialIds.has(b.id));
+  }
+
   if (activeTag) {
     bks = bks.filter(b => b.tags.includes(activeTag));
   }
@@ -146,6 +176,23 @@ function getFilteredBookmarks() {
       bk.url.toLowerCase().includes(query) ||
       bk.tags.some(t => t.toLowerCase().includes(query))
     );
+  }
+
+  // Sort
+  bks = [...bks];
+  switch (currentSort) {
+    case 'recent-desc':
+      bks.sort((a, b) => b.updatedAt - a.updatedAt);
+      break;
+    case 'recent-asc':
+      bks.sort((a, b) => a.updatedAt - b.updatedAt);
+      break;
+    case 'name-asc':
+      bks.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+      break;
+    case 'name-desc':
+      bks.sort((a, b) => b.title.localeCompare(a.title, undefined, { sensitivity: 'base' }));
+      break;
   }
 
   return bks;
@@ -276,6 +323,11 @@ searchInput.addEventListener('input', () => {
   clearTimeout(debounceTimer);
   searchClear.style.display = searchInput.value ? 'flex' : 'none';
   debounceTimer = setTimeout(renderBookmarks, 200);
+});
+
+sortSelect.addEventListener('change', () => {
+  currentSort = sortSelect.value;
+  renderBookmarks(true);
 });
 
 searchClear.addEventListener('click', () => {
