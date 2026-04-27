@@ -125,6 +125,34 @@ body {
   color: var(--amber);
 }
 
+.speed-dial-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-header);
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--ease);
+  flex-shrink: 0;
+}
+
+.speed-dial-toggle-btn:hover {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.speed-dial-toggle-btn.active {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
 /* ===== Section Labels ===== */
 .section-label {
   display: flex;
@@ -266,6 +294,164 @@ body {
 
 .speed-dial-tile.filled:hover .speed-dial-remove {
   display: flex;
+}
+
+.speed-dial-tile.dragging {
+  opacity: 0.35;
+  border-style: dashed;
+}
+
+.speed-dial-tile.drag-over {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  box-shadow: var(--shadow-blue);
+  transform: scale(1.04);
+}
+
+.speed-dial-empty-plus {
+  font-size: 18px;
+  color: var(--text-dim);
+  line-height: 1;
+  transition: color var(--ease-fast);
+}
+
+.speed-dial-tile.empty:hover .speed-dial-empty-plus {
+  color: var(--blue);
+}
+
+.speed-dial-tile.empty:hover {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  cursor: pointer;
+}
+
+/* ===== Slot Picker ===== */
+.slot-picker-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 50;
+  padding-top: 48px;
+}
+
+.slot-picker-dialog {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  width: calc(100% - 32px);
+  max-height: calc(100% - 80px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slot-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.slot-picker-title {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.slot-picker-close {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--ease-fast);
+}
+
+.slot-picker-close:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.slot-picker-input {
+  margin: 10px 12px 6px;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: var(--font);
+  outline: none;
+  flex-shrink: 0;
+}
+
+.slot-picker-input:focus {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-blue);
+}
+
+.slot-picker-results {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 6px 8px;
+}
+
+.slot-picker-empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  padding: 20px;
+}
+
+.slot-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font);
+  transition: background var(--ease-fast);
+}
+
+.slot-picker-item:hover,
+.slot-picker-item:focus {
+  background: var(--bg-card-hover);
+  outline: none;
+}
+
+.slot-picker-item-title {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slot-picker-item-domain {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
 }
 
 /* ===== Bookmark List ===== */
@@ -1069,6 +1255,20 @@ body {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.6);
   color: #ffffff;
+}
+
+[data-theme="forge"] .search-bar .speed-dial-toggle-btn {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="forge"] .search-bar .speed-dial-toggle-btn:hover,
+[data-theme="forge"] .search-bar .speed-dial-toggle-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: none;
 }
 
 [data-theme="forge"] .bookmark-item {

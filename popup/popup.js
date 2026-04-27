@@ -1,5 +1,5 @@
 import { initialize } from '../lib/storage.js';
-import { getAllBookmarks, getSpeedDial, deleteBookmark, getBookmarkByUrl } from '../lib/bookmarks.js';
+import { getAllBookmarks, getSpeedDial, deleteBookmark, getBookmarkByUrl, setSpeedDialSlot } from '../lib/bookmarks.js';
 import { buildIndex, search } from '../lib/search.js';
 import { renameTag, deleteTag, getAllTags } from '../lib/tags.js';
 import { createSearchBar } from './components/search-bar.js';
@@ -12,6 +12,7 @@ import { loadTheme } from '../lib/theme.js';
 const app = document.getElementById('app');
 let currentView = 'main'; // 'main' | 'capture'
 let activeTagFilter = null;
+let speedDialVisible = false;
 
 // --- Components ---
 
@@ -19,10 +20,12 @@ const searchBar = createSearchBar({
   onSearch: handleSearch,
   onClear: handleClearSearch,
   onCapture: showCaptureForCurrentTab,
+  onSpeedDialToggle: () => toggleSpeedDial(),
 });
 
 const speedDial = createSpeedDial({
   onEdit: showEditForm,
+  onEmptySlotClick: showSlotPicker,
 });
 
 const bookmarkList = createBookmarkList({
@@ -85,6 +88,115 @@ deleteOverlay.querySelector('.delete-confirm-btn').addEventListener('click', asy
   }
 });
 
+// Slot picker overlay
+let slotPickerTarget = -1;
+let slotPickerAllBookmarks = [];
+
+const slotPickerOverlay = document.createElement('div');
+slotPickerOverlay.className = 'slot-picker-overlay';
+slotPickerOverlay.style.display = 'none';
+slotPickerOverlay.innerHTML = `
+  <div class="slot-picker-dialog">
+    <div class="slot-picker-header">
+      <span class="slot-picker-title">Assign to slot <strong id="slot-picker-num"></strong></span>
+      <button class="slot-picker-close">&times;</button>
+    </div>
+    <input type="text" class="slot-picker-input" id="slot-picker-input" placeholder="Search bookmarks...">
+    <div class="slot-picker-results" id="slot-picker-results"></div>
+  </div>
+`;
+
+slotPickerOverlay.querySelector('.slot-picker-close').addEventListener('click', hideSlotPicker);
+slotPickerOverlay.addEventListener('click', (e) => {
+  if (e.target === slotPickerOverlay) hideSlotPicker();
+});
+
+const slotPickerInput = slotPickerOverlay.querySelector('#slot-picker-input');
+const slotPickerResults = slotPickerOverlay.querySelector('#slot-picker-results');
+const slotPickerNum = slotPickerOverlay.querySelector('#slot-picker-num');
+
+slotPickerInput.addEventListener('input', () => renderSlotPickerResults(slotPickerInput.value.trim()));
+slotPickerInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { e.stopPropagation(); hideSlotPicker(); }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const first = slotPickerResults.querySelector('.slot-picker-item');
+    if (first) first.focus();
+  }
+});
+
+function hideSlotPicker() {
+  slotPickerOverlay.style.display = 'none';
+  slotPickerTarget = -1;
+}
+
+async function showSlotPicker(slotIndex) {
+  slotPickerTarget = slotIndex;
+  slotPickerNum.textContent = slotIndex;
+  slotPickerInput.value = '';
+  slotPickerAllBookmarks = await getAllBookmarks();
+  renderSlotPickerResults('');
+  slotPickerOverlay.style.display = 'flex';
+  slotPickerInput.focus();
+}
+
+function renderSlotPickerResults(query) {
+  const q = query.toLowerCase();
+  const matches = q
+    ? slotPickerAllBookmarks.filter(bk =>
+        bk.title.toLowerCase().includes(q) ||
+        bk.url.toLowerCase().includes(q) ||
+        bk.tags.some(t => t.includes(q))
+      )
+    : slotPickerAllBookmarks;
+
+  slotPickerResults.innerHTML = '';
+
+  if (matches.length === 0) {
+    slotPickerResults.innerHTML = '<div class="slot-picker-empty">No bookmarks found</div>';
+    return;
+  }
+
+  for (const bk of matches.slice(0, 30)) {
+    const item = document.createElement('button');
+    item.className = 'slot-picker-item';
+
+    const img = document.createElement('img');
+    img.src = bk.favIconUrl || `https://www.google.com/s2/favicons?domain=${bk.domain}&sz=16`;
+    img.width = 16; img.height = 16;
+    img.className = bk.faviconLight ? 'favicon-light' : '';
+    img.onerror = () => { img.style.display = 'none'; };
+
+    const text = document.createElement('span');
+    text.className = 'slot-picker-item-title';
+    text.textContent = bk.title;
+
+    const domain = document.createElement('span');
+    domain.className = 'slot-picker-item-domain';
+    domain.textContent = bk.domain;
+
+    item.appendChild(img);
+    item.appendChild(text);
+    item.appendChild(domain);
+
+    item.addEventListener('click', async () => {
+      const slot = slotPickerTarget;
+      hideSlotPicker();
+      await setSpeedDialSlot(bk.id, slot);
+      await speedDial.render();
+    });
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); (item.nextElementSibling || item).focus(); }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        item.previousElementSibling ? item.previousElementSibling.focus() : slotPickerInput.focus();
+      }
+    });
+
+    slotPickerResults.appendChild(item);
+  }
+}
+
 // --- Layout ---
 
 const mainContainer = document.createElement('div');
@@ -103,6 +215,7 @@ mainContainer.appendChild(bookmarkList.element);
 app.appendChild(mainContainer);
 app.appendChild(captureForm.element);
 app.appendChild(deleteOverlay);
+app.appendChild(slotPickerOverlay);
 captureForm.element.style.display = 'none';
 
 // --- Views ---
@@ -207,7 +320,7 @@ async function handleSearch(query) {
   showBookmarkList();
   backToTagsBtn.innerHTML = '\u2190 <span class="back-to-tags-label">All Tags</span>';
   const results = search(query);
-  bookmarkList.render(results);
+  bookmarkList.render(results, true);
 }
 
 async function handleClearSearch() {
@@ -391,7 +504,13 @@ function confirmDeleteTag(tagName) {
 
 // --- Keyboard shortcuts ---
 
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', async (e) => {
+  // Handle slot picker
+  if (slotPickerOverlay.style.display !== 'none') {
+    if (e.key === 'Escape') hideSlotPicker();
+    return;
+  }
+
   // Handle delete overlay
   if (deleteOverlay.style.display !== 'none') {
     if (e.key === 'Escape') {
@@ -559,6 +678,13 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
+  // Tab to toggle speed dial (when search is empty)
+  if (e.key === 'Tab' && searchEmpty) {
+    e.preventDefault();
+    await toggleSpeedDial();
+    return;
+  }
+
   // '/' to focus search (when not already in search)
   if (!searchFocused && e.key === '/') {
     e.preventDefault();
@@ -578,6 +704,18 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 });
+
+async function toggleSpeedDial() {
+  speedDialVisible = !speedDialVisible;
+  if (speedDialVisible) {
+    await speedDial.render();
+    // render() hides itself when no filled slots; respect that
+    speedDialVisible = speedDial.element.style.display !== 'none';
+  } else {
+    speedDial.element.style.display = 'none';
+  }
+  searchBar.setSpeedDialActive(speedDialVisible);
+}
 
 async function openSpeedDialSlot(slot) {
   const slots = await getSpeedDial();
@@ -676,6 +814,7 @@ async function renderRecent() {
 
 async function refreshMainView() {
   await speedDial.render();
+  if (!speedDialVisible) speedDial.element.style.display = 'none';
   const all = await getAllBookmarks();
   await buildIndex(all);
   await renderRecent();
@@ -690,6 +829,7 @@ async function init() {
   await loadTheme();
   showMainView();
   await refreshMainView();
+  searchBar.focus();
 }
 
 init();

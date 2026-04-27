@@ -1,5 +1,5 @@
 import { initialize, get, set } from '../lib/storage.js';
-import { getAllBookmarks, deleteBookmark, saveBookmark, updateFavicon, getSpeedDial } from '../lib/bookmarks.js';
+import { getAllBookmarks, deleteBookmark, saveBookmark, updateFavicon, getSpeedDial, setSpeedDialSlot } from '../lib/bookmarks.js';
 import { normalizeTag, getAllTags, deleteTag } from '../lib/tags.js';
 import { THEMES, getTheme, setTheme, loadTheme } from '../lib/theme.js';
 import { importChromeBookmarks, getImportPreview, importFromJSON } from '../lib/importer.js';
@@ -10,6 +10,7 @@ let checkedIds = new Set();
 let activeTag = null; // null = show all
 let speedDialFilter = false;
 let speedDialIds = new Set();
+let speedDialBookmarks = new Array(10).fill(null); // indexed by slot
 let currentSort = 'recent-desc';
 
 const tagListEl = document.getElementById('tag-list');
@@ -36,6 +37,12 @@ const tagDialogInput = document.getElementById('tag-dialog-input');
 const tagDialogCancel = document.getElementById('tag-dialog-cancel');
 const tagDialogConfirm = document.getElementById('tag-dialog-confirm');
 
+const renameDialog = document.getElementById('rename-dialog');
+const renameTitleInput = document.getElementById('rename-title-input');
+const renameUrlInput = document.getElementById('rename-url-input');
+const renameDialogCancel = document.getElementById('rename-dialog-cancel');
+const renameDialogConfirm = document.getElementById('rename-dialog-confirm');
+
 const confirmDialog = document.getElementById('confirm-dialog');
 const confirmTitle = document.getElementById('confirm-dialog-title');
 const confirmSubtitle = document.getElementById('confirm-dialog-subtitle');
@@ -44,9 +51,9 @@ const confirmConfirm = document.getElementById('confirm-dialog-confirm');
 
 async function load() {
   allBookmarks = await getAllBookmarks();
-  // Cache speed dial bookmark IDs
-  const sd = await getSpeedDial();
-  speedDialIds = new Set(sd.filter(Boolean).map(b => b.id));
+  // Cache speed dial state
+  speedDialBookmarks = await getSpeedDial();
+  speedDialIds = new Set(speedDialBookmarks.filter(Boolean).map(b => b.id));
   renderSidebar();
   renderBookmarks();
 }
@@ -163,6 +170,9 @@ function getFilteredBookmarks() {
 
   if (speedDialFilter) {
     bks = bks.filter(b => speedDialIds.has(b.id));
+    // Sort by slot position, ignoring currentSort
+    const slotOf = (b) => speedDialBookmarks.findIndex(s => s && s.id === b.id);
+    return bks.sort((a, b) => slotOf(a) - slotOf(b));
   }
 
   if (activeTag) {
@@ -288,6 +298,29 @@ function renderBookmarks(preserveSelection = false) {
     info.appendChild(url);
     info.appendChild(tagsDiv);
 
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'manage-row-actions';
+
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'manage-row-btn';
+    renameBtn.title = 'Rename bookmark';
+    renameBtn.innerHTML = '&#9998;';
+    renameBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showRenameDialog(bk);
+    });
+    actionsDiv.appendChild(renameBtn);
+
+    const sdBtn = document.createElement('button');
+    sdBtn.className = `manage-row-btn${bk.speedDial !== null && bk.speedDial !== undefined ? ' manage-row-btn-active' : ''}`;
+    sdBtn.title = bk.speedDial !== null && bk.speedDial !== undefined ? `Speed dial: slot ${bk.speedDial}` : 'Set speed dial slot';
+    sdBtn.innerHTML = bk.speedDial !== null && bk.speedDial !== undefined ? `<strong>${bk.speedDial}</strong>` : '&#9889;';
+    sdBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showSpeedDialPicker(bk);
+    });
+    actionsDiv.appendChild(sdBtn);
+
     row.addEventListener('click', (e) => {
       if (e.target.classList.contains('manage-tag-chip')) return;
       cb.checked = !cb.checked;
@@ -300,6 +333,7 @@ function renderBookmarks(preserveSelection = false) {
     row.appendChild(cb);
     row.appendChild(favicon);
     row.appendChild(info);
+    row.appendChild(actionsDiv);
     listEl.appendChild(row);
   }
 
@@ -463,34 +497,85 @@ btnImportChrome.addEventListener('click', async () => {
   alert(`Imported ${result.imported}, merged ${result.merged}, skipped ${result.skipped}.`);
 });
 
-async function checkFaviconLight(imgUrl) {
-  try {
-    const resp = await fetch(imgUrl);
-    const blob = await resp.blob();
-    const bitmap = await createImageBitmap(blob);
-    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0);
-    const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+// Returns { dataUrl, isLight } for a bookmark, using Chrome's favicon cache
+// with a fallback to Google's service.
+async function fetchFaviconInfo(bookmarkUrl, domain) {
+  const blobToDataUrl = (blob) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
 
-    let totalLum = 0;
-    let samples = 0;
-
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] < 30) continue;
-      const lum = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
-      totalLum += lum;
-      samples++;
+  const analyzeBlob = async (blob) => {
+    try {
+      const bitmap = await createImageBitmap(blob);
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0);
+      const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      let totalLum = 0, samples = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 30) continue;
+        const lum = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+        totalLum += lum;
+        samples++;
+      }
+      const avgLum = samples > 0 ? totalLum / samples : 0;
+      return { isLight: samples > 0 && avgLum > 0.92, avgLum, samples };
+    } catch {
+      return { isLight: false, avgLum: 0, samples: 0 };
     }
+  };
 
-    const avgLum = samples > 0 ? totalLum / samples : 0;
-    const isLight = samples > 0 && avgLum > 0.92;
-    console.log(`Favicon ${imgUrl}: avgLum=${avgLum.toFixed(3)}, samples=${samples}/${bitmap.width * bitmap.height}, light=${isLight}`);
-    return isLight;
-  } catch (err) {
-    console.log(`Favicon check failed for ${imgUrl}:`, err);
-    return false;
-  }
+  // Detect if a blob looks like the generic gray globe (mostly unsaturated pixels)
+  const isGenericGlobe = async (blob) => {
+    try {
+      const bitmap = await createImageBitmap(blob);
+      const sz = Math.min(bitmap.width, bitmap.height, 32);
+      const canvas = new OffscreenCanvas(sz, sz);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0, sz, sz);
+      const { data } = ctx.getImageData(0, 0, sz, sz);
+      let grayCount = 0, totalOpaque = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+        if (a < 30) continue;
+        totalOpaque++;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        if (max === 0 || (max - min) / max < 0.15) grayCount++;
+      }
+      return totalOpaque === 0 || grayCount / totalOpaque > 0.85;
+    } catch {
+      return true;
+    }
+  };
+
+  // 1. Try Chrome's favicon cache (populated from browsing history)
+  try {
+    const chromeUrl = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(bookmarkUrl)}&size=32`;
+    const resp = await fetch(chromeUrl);
+    if (resp.ok) {
+      const blob = await resp.blob();
+      if (!await isGenericGlobe(blob)) {
+        const { isLight } = await analyzeBlob(blob);
+        return { dataUrl: await blobToDataUrl(blob), isLight };
+      }
+    }
+  } catch { /* fall through */ }
+
+  // 2. Fall back to Google's favicon service
+  try {
+    const googleUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    const resp = await fetch(googleUrl);
+    if (resp.ok) {
+      const blob = await resp.blob();
+      const { isLight } = await analyzeBlob(blob);
+      return { dataUrl: await blobToDataUrl(blob), isLight };
+    }
+  } catch { /* fall through */ }
+
+  return null;
 }
 
 btnRefreshFavicons.addEventListener('click', async () => {
@@ -498,7 +583,6 @@ btnRefreshFavicons.addEventListener('click', async () => {
   btnRefreshFavicons.disabled = true;
   btnRefreshFavicons.textContent = `Refreshing 0/${total}...`;
 
-  // Collect all results first, then write once
   const updates = {};
   let done = 0;
 
@@ -506,19 +590,23 @@ btnRefreshFavicons.addEventListener('click', async () => {
   for (let i = 0; i < allBookmarks.length; i += batch) {
     const chunk = allBookmarks.slice(i, i + batch);
     await Promise.all(chunk.map(async (bk) => {
-      const faviconUrl = `https://www.google.com/s2/favicons?domain=${bk.domain}&sz=32`;
-      const isLight = await checkFaviconLight(faviconUrl);
-      updates[bk.id] = { faviconUrl, isLight };
+      // Skip custom-uploaded favicons (user set them intentionally)
+      if (!bk.favIconUrl || bk.favIconUrl.startsWith('data:')) {
+        done++;
+        btnRefreshFavicons.textContent = `Refreshing ${done}/${total}...`;
+        return;
+      }
+      const result = await fetchFaviconInfo(bk.url, bk.domain);
+      if (result) updates[bk.id] = result;
       done++;
       btnRefreshFavicons.textContent = `Refreshing ${done}/${total}...`;
     }));
   }
 
-  // Single write to storage
   const { bookmarks = {} } = await get('bookmarks');
-  for (const [id, { faviconUrl, isLight }] of Object.entries(updates)) {
+  for (const [id, { dataUrl, isLight }] of Object.entries(updates)) {
     if (bookmarks[id]) {
-      bookmarks[id].favIconUrl = faviconUrl;
+      bookmarks[id].favIconUrl = dataUrl;
       bookmarks[id].faviconLight = isLight;
     }
   }
@@ -591,6 +679,117 @@ function showRemoveTagPicker() {
 
 // ── Dialogs ──
 
+function showSpeedDialPicker(bk) {
+  const dialog = document.getElementById('speeddial-dialog');
+  const subtitle = document.getElementById('speeddial-dialog-subtitle');
+  const grid = document.getElementById('speeddial-slot-grid');
+  const removeBtn = document.getElementById('speeddial-dialog-remove');
+  const cancelBtn = document.getElementById('speeddial-dialog-cancel');
+
+  const currentSlot = bk.speedDial !== null && bk.speedDial !== undefined ? bk.speedDial : -1;
+  subtitle.textContent = currentSlot >= 0 ? `Currently in slot ${currentSlot}` : 'Not in speed dial';
+  removeBtn.style.display = currentSlot >= 0 ? '' : 'none';
+
+  grid.innerHTML = '';
+  const displayOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+  for (const i of displayOrder) {
+    const occupant = speedDialBookmarks[i];
+    const isCurrent = i === currentSlot;
+    const isOccupied = occupant && occupant.id !== bk.id;
+
+    const btn = document.createElement('button');
+    btn.className = `speeddial-slot-btn${isCurrent ? ' current' : ''}${isOccupied ? ' occupied' : ''}`;
+    btn.title = isOccupied ? `Occupied by: ${occupant.title}` : `Assign to slot ${i}`;
+
+    const num = document.createElement('span');
+    num.className = 'speeddial-slot-num';
+    num.textContent = i;
+
+    btn.appendChild(num);
+
+    if (occupant) {
+      const img = document.createElement('img');
+      img.className = 'speeddial-slot-favicon';
+      img.src = occupant.favIconUrl || `https://www.google.com/s2/favicons?domain=${occupant.domain}&sz=16`;
+      img.width = 16;
+      img.height = 16;
+      img.onerror = () => { img.style.display = 'none'; };
+      btn.appendChild(img);
+
+      const lbl = document.createElement('span');
+      lbl.className = 'speeddial-slot-title';
+      lbl.textContent = occupant.title;
+      btn.appendChild(lbl);
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'speeddial-slot-empty';
+      empty.textContent = 'empty';
+      btn.appendChild(empty);
+    }
+
+    btn.addEventListener('click', async () => {
+      dialog.style.display = 'none';
+      await setSpeedDialSlot(bk.id, i);
+      await load();
+    });
+    grid.appendChild(btn);
+  }
+
+  dialog.style.display = 'flex';
+
+  removeBtn.onclick = async () => {
+    dialog.style.display = 'none';
+    await setSpeedDialSlot(bk.id, null);
+    await load();
+  };
+  cancelBtn.onclick = () => { dialog.style.display = 'none'; };
+}
+
+function showRenameDialog(bk) {
+  renameTitleInput.value = bk.title;
+  renameUrlInput.value = bk.url;
+  renameDialog.style.display = 'flex';
+  renameTitleInput.focus();
+  renameTitleInput.select();
+
+  const cleanup = () => {
+    renameDialog.style.display = 'none';
+    renameDialogConfirm.onclick = null;
+    renameDialogCancel.onclick = null;
+    renameTitleInput.onkeydown = null;
+    renameUrlInput.onkeydown = null;
+  };
+
+  const doSave = async () => {
+    const newTitle = renameTitleInput.value.trim();
+    const newUrl = renameUrlInput.value.trim();
+    if (!newTitle || !newUrl) return;
+    cleanup();
+    const urlChanged = newUrl !== bk.url;
+    if (urlChanged) await deleteBookmark(bk.id);
+    await saveBookmark({
+      url: newUrl,
+      title: newTitle,
+      tags: bk.tags,
+      favIconUrl: bk.favIconUrl,
+      speedDialSlot: bk.speedDial,
+    });
+    allBookmarks = await getAllBookmarks();
+    renderSidebar();
+    renderBookmarks(true);
+  };
+
+  renameDialogConfirm.onclick = doSave;
+  renameDialogCancel.onclick = cleanup;
+
+  const onKey = (e) => {
+    if (e.key === 'Enter') doSave();
+    if (e.key === 'Escape') cleanup();
+  };
+  renameTitleInput.onkeydown = onKey;
+  renameUrlInput.onkeydown = onKey;
+}
+
 function showTagDialog(title, onConfirm) {
   tagDialogTitle.textContent = title;
   tagDialogInput.value = '';
@@ -629,6 +828,9 @@ function showConfirm(title, subtitle, onConfirm) {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    const sdDialog = document.getElementById('speeddial-dialog');
+    if (sdDialog.style.display !== 'none') { sdDialog.style.display = 'none'; return; }
+    if (renameDialog.style.display !== 'none') { renameDialog.style.display = 'none'; return; }
     if (removeTagDialog.style.display !== 'none') { removeTagDialog.style.display = 'none'; return; }
     if (tagDialog.style.display !== 'none') { tagDialog.style.display = 'none'; return; }
     if (confirmDialog.style.display !== 'none') { confirmDialog.style.display = 'none'; return; }
@@ -640,6 +842,7 @@ document.addEventListener('keydown', (e) => {
 const THEME_SWATCHES = {
   default: ['#3b82f6', '#8b5cf6', '#14b8a6', '#f59e0b', '#f43f5e'],
   forge: ['#f59e0b', '#0a0a0a', '#e11d48', '#0d9488', '#7c3aed'],
+  material: ['#d0bcff', '#80cbc4', '#efb8c8', '#a5d6a7', '#ffcc80'],
 };
 
 async function renderThemePicker() {

@@ -6,7 +6,8 @@
   "permissions": [
     "storage",
     "bookmarks",
-    "activeTab"
+    "activeTab",
+    "favicon"
   ],
   "host_permissions": [
     "https://www.google.com/*",

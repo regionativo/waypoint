@@ -98,6 +98,38 @@
     </div>
   </div>
 
+  <!-- Speed dial picker dialog -->
+  <div class="manage-overlay" id="speeddial-dialog" style="display:none">
+    <div class="manage-dialog manage-dialog-wide">
+      <p class="manage-dialog-title">Set Speed Dial Slot</p>
+      <p class="manage-dialog-subtitle" id="speeddial-dialog-subtitle"></p>
+      <div class="speeddial-slot-grid" id="speeddial-slot-grid"></div>
+      <div class="manage-dialog-actions">
+        <button class="manage-btn" id="speeddial-dialog-cancel">Cancel</button>
+        <button class="manage-btn manage-btn-danger" id="speeddial-dialog-remove">Remove from Speed Dial</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename dialog -->
+  <div class="manage-overlay" id="rename-dialog" style="display:none">
+    <div class="manage-dialog">
+      <p class="manage-dialog-title">Rename Bookmark</p>
+      <div class="manage-dialog-field">
+        <label class="manage-dialog-label">Title</label>
+        <input type="text" class="manage-dialog-input" id="rename-title-input" placeholder="Title...">
+      </div>
+      <div class="manage-dialog-field">
+        <label class="manage-dialog-label">URL</label>
+        <input type="text" class="manage-dialog-input" id="rename-url-input" placeholder="https://...">
+      </div>
+      <div class="manage-dialog-actions">
+        <button class="manage-btn" id="rename-dialog-cancel">Cancel</button>
+        <button class="manage-btn manage-btn-primary" id="rename-dialog-confirm">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Confirm dialog -->
   <div class="manage-overlay" id="confirm-dialog" style="display:none">
     <div class="manage-dialog">

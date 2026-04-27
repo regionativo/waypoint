@@ -1,8 +1,10 @@
 import { getSpeedDial, incrementVisitCount, setSpeedDialSlot } from '../../lib/bookmarks.js';
 
-export function createSpeedDial({ onEdit }) {
+export function createSpeedDial({ onEdit, onEmptySlotClick }) {
   const container = document.createElement('div');
   container.className = 'speed-dial';
+
+  let draggedSlot = -1;
 
   async function render() {
     const slots = await getSpeedDial();
@@ -20,14 +22,50 @@ export function createSpeedDial({ onEdit }) {
 
     for (const num of displayOrder) {
       const slot = slots[num];
-      if (!slot) continue;
-
       const tile = document.createElement('div');
-      tile.className = 'speed-dial-tile filled';
 
-      const label = document.createElement('span');
-      label.className = 'speed-dial-label';
-      label.textContent = num;
+      if (!slot) {
+        tile.className = 'speed-dial-tile empty';
+
+        const emptyLabel = document.createElement('span');
+        emptyLabel.className = 'speed-dial-label';
+        emptyLabel.textContent = num;
+        tile.appendChild(emptyLabel);
+
+        const plusIcon = document.createElement('span');
+        plusIcon.className = 'speed-dial-empty-plus';
+        plusIcon.textContent = '+';
+        tile.appendChild(plusIcon);
+
+        tile.addEventListener('click', () => onEmptySlotClick(num));
+
+        tile.addEventListener('dragover', (e) => {
+          if (draggedSlot === -1) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          tile.classList.add('drag-over');
+        });
+        tile.addEventListener('dragleave', () => tile.classList.remove('drag-over'));
+        tile.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          tile.classList.remove('drag-over');
+          if (draggedSlot === -1 || draggedSlot === num) return;
+          const srcBk = slots[draggedSlot];
+          draggedSlot = -1;
+          await setSpeedDialSlot(srcBk.id, num);
+          await render();
+        });
+
+        grid.appendChild(tile);
+        continue;
+      }
+
+      tile.className = 'speed-dial-tile filled';
+      tile.draggable = true;
+
+      const slotLabel = document.createElement('span');
+      slotLabel.className = 'speed-dial-label';
+      slotLabel.textContent = num;
 
       const favicon = document.createElement('img');
       favicon.className = `speed-dial-favicon${slot.faviconLight ? ' favicon-light' : ''}`;
@@ -52,16 +90,49 @@ export function createSpeedDial({ onEdit }) {
         await render();
       });
 
-      tile.appendChild(label);
+      tile.appendChild(slotLabel);
       tile.appendChild(favicon);
       tile.appendChild(title);
       tile.appendChild(removeBtn);
+
+      // Drag events
+      tile.addEventListener('dragstart', (e) => {
+        draggedSlot = num;
+        e.dataTransfer.effectAllowed = 'move';
+        // Defer so the tile isn't already hidden when ghost is captured
+        requestAnimationFrame(() => tile.classList.add('dragging'));
+      });
+      tile.addEventListener('dragend', () => {
+        draggedSlot = -1;
+        tile.classList.remove('dragging');
+        grid.querySelectorAll('.drag-over').forEach(t => t.classList.remove('drag-over'));
+      });
+      tile.addEventListener('dragover', (e) => {
+        if (draggedSlot === -1 || draggedSlot === num) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        grid.querySelectorAll('.drag-over').forEach(t => t.classList.remove('drag-over'));
+        tile.classList.add('drag-over');
+      });
+      tile.addEventListener('dragleave', () => tile.classList.remove('drag-over'));
+      tile.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        tile.classList.remove('drag-over');
+        if (draggedSlot === -1 || draggedSlot === num) return;
+        const srcSlot = draggedSlot;
+        const srcBk = slots[srcSlot];
+        const dstBk = slot; // this tile's bookmark
+        draggedSlot = -1;
+        // Swap: move src to dst slot, then dst to src slot
+        await setSpeedDialSlot(srcBk.id, num);
+        await setSpeedDialSlot(dstBk.id, srcSlot);
+        await render();
+      });
 
       tile.addEventListener('click', () => {
         incrementVisitCount(slot.id);
         chrome.tabs.create({ url: slot.url });
       });
-
       tile.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         onEdit(slot);
@@ -70,7 +141,8 @@ export function createSpeedDial({ onEdit }) {
       grid.appendChild(tile);
     }
 
-    if (grid.children.length === 0) {
+    const hasFilled = slots.some(Boolean);
+    if (!hasFilled) {
       container.style.display = 'none';
       return;
     }

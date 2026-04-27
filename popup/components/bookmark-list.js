@@ -48,7 +48,7 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
     updateSelection();
   }
 
-  function render(bookmarks) {
+  function render(bookmarks, autoSelect = false) {
     container.innerHTML = '';
     currentBookmarks = bookmarks;
     selectedIndex = -1;
@@ -152,6 +152,11 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
       });
 
       container.appendChild(item);
+    }
+
+    if (autoSelect && bookmarks.length > 0) {
+      selectedIndex = 0;
+      updateSelection();
     }
   }
 

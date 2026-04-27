@@ -517,6 +517,142 @@ body {
 .manage-tag-chip:nth-child(6n+5) { color: var(--tag-5); background: var(--tag-5-bg); }
 .manage-tag-chip:nth-child(6n+6) { color: var(--tag-6); background: var(--tag-6-bg); }
 
+/* ===== Speed dial picker ===== */
+.manage-dialog-wide {
+  max-width: 520px;
+}
+
+.speeddial-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.speeddial-slot-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all var(--ease-fast);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+.speeddial-slot-btn:hover {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+}
+
+.speeddial-slot-btn.current {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  box-shadow: var(--shadow-blue);
+}
+
+.speeddial-slot-btn.occupied:not(.current) {
+  opacity: 0.55;
+}
+
+.speeddial-slot-num {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-dim);
+  line-height: 1;
+}
+
+.speeddial-slot-btn.current .speeddial-slot-num {
+  color: var(--blue);
+}
+
+.speeddial-slot-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.speeddial-slot-title {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 64px;
+  width: 100%;
+  text-align: center;
+}
+
+.speeddial-slot-empty {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ===== Per-row action buttons ===== */
+.manage-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--ease-fast);
+}
+
+.manage-row:hover .manage-row-actions {
+  opacity: 1;
+}
+
+.manage-row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--ease-fast);
+  padding: 0;
+}
+
+.manage-row-btn:hover {
+  background: var(--blue-bg);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.manage-row-btn.manage-row-btn-active {
+  background: var(--blue-bg);
+  border-color: var(--blue);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  opacity: 1;
+}
+
+/* ===== Dialog field label ===== */
+.manage-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.manage-dialog-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* ===== Light favicon fix ===== */
 .favicon-light {
   background: #1a1a1a;

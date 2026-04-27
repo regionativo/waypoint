@@ -181,67 +181,84 @@
   --ease: 100ms ease;
 }
 
-/* ===== Cinco de Mayo — Festive & Vibrant ===== */
-[data-theme="cinco"] {
-  --bg-body: #fef9f0;
-  --bg-header: #006847;
-  --bg-card: #ffffff;
-  --bg-card-hover: #fefaf2;
-  --bg-input: #fdf6ec;
-  --bg-input-focus: #ffffff;
-  --bg-section: #fef9f0;
-  --bg-overlay: rgba(0, 54, 36, 0.5);
+/* ===== Material Dark — Material You dark tonal scheme ===== */
+[data-theme="material"] {
+  /* Tonal surface hierarchy */
+  --bg-body: #141218;
+  --bg-header: #1d1b20;
+  --bg-card: #1d1b20;
+  --bg-card-hover: #211f26;
+  --bg-input: #211f26;
+  --bg-input-focus: #2b2930;
+  --bg-section: #141218;
+  --bg-overlay: rgba(0, 0, 0, 0.65);
 
-  --text-primary: #1a1a1a;
-  --text-secondary: #4a4a4a;
-  --text-dim: #8a8a7a;
-  --text-bright: #006847;
+  /* On-surface text */
+  --text-primary: #e6e1e5;
+  --text-secondary: #cac4d0;
+  --text-dim: #938f99;
+  --text-bright: #ffffff;
 
-  --blue: #006847;
-  --blue-light: #2e8b67;
-  --blue-pale: #d4f0e2;
-  --blue-bg: #edf8f2;
+  /* Primary — lavender */
+  --blue: #d0bcff;
+  --blue-light: #e8def8;
+  --blue-pale: #4f378b;
+  --blue-bg: #2d2640;
 
-  --amber: #f4a100;
-  --amber-light: #ffc233;
-  --amber-pale: #fff3d0;
-  --amber-bg: #fffbeb;
+  /* Tertiary — pink */
+  --amber: #efb8c8;
+  --amber-light: #f5c9d6;
+  --amber-pale: #633b48;
+  --amber-bg: #3b2231;
 
-  --teal: #006847;
-  --teal-pale: #d4f0e2;
-  --purple: #6b2fa0;
-  --purple-pale: #f0e4fb;
-  --rose: #ce1126;
-  --rose-pale: #fde0e4;
-  --green: #006847;
-  --green-pale: #d4f0e2;
-  --orange: #e8792b;
-  --orange-pale: #fde8d5;
+  /* Semantic tones */
+  --teal: #80cbc4;
+  --teal-pale: #1a3e3c;
+  --purple: #ce93d8;
+  --purple-pale: #2d1a36;
+  --rose: #f48fb1;
+  --rose-pale: #3b1a27;
+  --green: #a5d6a7;
+  --green-pale: #1a3b1c;
+  --orange: #ffcc80;
+  --orange-pale: #3d2700;
 
-  --accent-1: #006847;
-  --accent-2: #ce1126;
-  --accent-3: #f4a100;
-  --accent-4: #6b2fa0;
-  --accent-5: #e8792b;
-  --accent-6: #d4508b;
+  /* Card left-border accent rotation */
+  --accent-1: #d0bcff;
+  --accent-2: #80cbc4;
+  --accent-3: #efb8c8;
+  --accent-4: #a5d6a7;
+  --accent-5: #ffcc80;
+  --accent-6: #ce93d8;
 
-  --tag-1: #fff; --tag-1-bg: #006847;
-  --tag-2: #fff; --tag-2-bg: #ce1126;
-  --tag-3: #1a1a1a; --tag-3-bg: #ffc233;
-  --tag-4: #fff; --tag-4-bg: #6b2fa0;
-  --tag-5: #fff; --tag-5-bg: #e8792b;
-  --tag-6: #fff; --tag-6-bg: #d4508b;
+  /* Tag chips — tonal containers */
+  --tag-1: #1a0e3d; --tag-1-bg: #d0bcff;
+  --tag-2: #0d2220; --tag-2-bg: #80cbc4;
+  --tag-3: #2a0e1a; --tag-3-bg: #f48fb1;
+  --tag-4: #0d2210; --tag-4-bg: #a5d6a7;
+  --tag-5: #251800; --tag-5-bg: #ffcc80;
+  --tag-6: #1e0d27; --tag-6-bg: #ce93d8;
 
-  --border: #d6cbb8;
-  --border-light: #ece5d8;
-  --border-focus: #006847;
-  --border-width: 1.5px;
+  /* Borders — outline / outline-variant */
+  --border: #49454f;
+  --border-light: #2b2930;
+  --border-focus: #d0bcff;
+  --border-width: 1px;
 
-  --danger: #ce1126;
-  --danger-bg: #fef0f1;
+  /* Danger — error tones */
+  --danger: #f2b8b8;
+  --danger-bg: #3b1a1a;
 
-  --shadow-card: 0 2px 6px rgba(0, 54, 36, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0 6px 16px rgba(0, 54, 36, 0.12), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 40px rgba(0, 54, 36, 0.16);
-  --shadow-blue: 0 0 0 3px rgba(0, 104, 71, 0.2);
+  /* Shadows — stronger on dark backgrounds */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.6);
+  --shadow-blue: 0 0 0 3px rgba(208, 188, 255, 0.22);
+
+  /* Material 3 uses more generous corner radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 28px;
+  --r-full: 100px;
 }
