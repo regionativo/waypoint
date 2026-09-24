@@ -885,6 +885,25 @@ async function renderThemePicker() {
   }
 }
 
+// ── Tabs ──
+
+function initTabs() {
+  const tabs = document.querySelectorAll('.manage-tab');
+  const panels = {
+    tags: document.getElementById('tab-panel-tags'),
+    settings: document.getElementById('tab-panel-settings'),
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.toggle('active', t === tab));
+      for (const [name, panel] of Object.entries(panels)) {
+        panel.style.display = name === tab.dataset.tab ? '' : 'none';
+      }
+    });
+  });
+}
+
 // ── Open mode picker ──
 
 async function renderOpenModePicker() {
@@ -909,6 +928,7 @@ async function renderOpenModePicker() {
 initialize().then(async () => {
   await loadTheme();
   await load();
+  initTabs();
   renderThemePicker();
   renderOpenModePicker();
 });

@@ -18,7 +18,12 @@
       </div>
     </header>
 
-    <div class="manage-body">
+    <div class="manage-tabs" id="manage-tabs">
+      <button class="manage-tab active" data-tab="tags">Tags</button>
+      <button class="manage-tab" data-tab="settings">Settings</button>
+    </div>
+
+    <div class="manage-body" id="tab-panel-tags">
       <!-- Tag sidebar -->
       <aside class="tag-sidebar" id="tag-sidebar">
         <div class="tag-sidebar-header">
@@ -63,10 +68,7 @@
     </div>
 
     <!-- Settings -->
-    <div class="manage-settings" id="settings-section">
-      <div class="manage-settings-header">
-        <h2 class="manage-settings-title">Settings</h2>
-      </div>
+    <div class="manage-settings" id="tab-panel-settings" style="display:none">
       <div class="manage-settings-row">
         <span class="manage-settings-label">Theme</span>
         <div class="theme-picker" id="theme-picker"></div>
