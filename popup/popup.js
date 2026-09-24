@@ -1,5 +1,5 @@
 import { initialize } from '../lib/storage.js';
-import { getAllBookmarks, getSpeedDial, deleteBookmark, getBookmarkByUrl, setSpeedDialSlot } from '../lib/bookmarks.js';
+import { getAllBookmarks, getSpeedDial, deleteBookmark, getBookmarkByUrl, setSpeedDialSlot, incrementVisitCount } from '../lib/bookmarks.js';
 import { buildIndex, search } from '../lib/search.js';
 import { renameTag, deleteTag, getAllTags } from '../lib/tags.js';
 import { createSearchBar } from './components/search-bar.js';
@@ -304,12 +304,30 @@ async function renderTagGrid() {
     return;
   }
 
-  for (const { tag, bookmarks: count } of tags) {
+  const MAX_TAGS = 12;
+  for (const { tag, bookmarks: count } of tags.slice(0, MAX_TAGS)) {
     const btn = document.createElement('button');
     btn.className = 'tag-grid-btn';
     btn.innerHTML = `${tag} <span class="tag-grid-count">${count}</span>`;
     btn.addEventListener('click', () => handleTagFilter(tag));
     tagGrid.appendChild(btn);
+  }
+
+  if (tags.length > MAX_TAGS) {
+    const more = document.createElement('button');
+    more.className = 'tag-grid-btn tag-grid-more';
+    more.textContent = `+${tags.length - MAX_TAGS} more`;
+    more.addEventListener('click', () => {
+      more.remove();
+      for (const { tag, bookmarks: count } of tags.slice(MAX_TAGS)) {
+        const btn = document.createElement('button');
+        btn.className = 'tag-grid-btn';
+        btn.innerHTML = `${tag} <span class="tag-grid-count">${count}</span>`;
+        btn.addEventListener('click', () => handleTagFilter(tag));
+        tagGrid.appendChild(btn);
+      }
+    });
+    tagGrid.appendChild(more);
   }
 }
 
@@ -634,7 +652,7 @@ document.addEventListener('keydown', async (e) => {
         return;
       }
     }
-    const opened = bookmarkList.openSelected();
+    const opened = await bookmarkList.openSelected();
     if (opened) {
       e.preventDefault();
       return;
@@ -740,7 +758,7 @@ function showYankFeedback() {
 // --- Recent bookmarks ---
 
 function updateRecentSelection() {
-  const items = recentSection.querySelectorAll('.recent-item');
+  const items = recentSection.querySelectorAll('.recent-column--added .recent-item');
   items.forEach((item, i) => item.classList.toggle('selected', i === selectedRecentIndex));
   if (selectedRecentIndex >= 0 && items[selectedRecentIndex]) {
     items[selectedRecentIndex].scrollIntoView({ block: 'nearest' });
@@ -755,59 +773,98 @@ function getSelectedUrl() {
   return bookmarkList.getSelectedUrl();
 }
 
+function buildRecentItem(bk) {
+  const item = document.createElement('a');
+  item.className = 'recent-item';
+  item.href = bk.url;
+  item.title = bk.url;
+  item.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await incrementVisitCount(bk.id);
+    chrome.tabs.create({ url: bk.url });
+  });
+  item.addEventListener('auxclick', async (e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      await incrementVisitCount(bk.id);
+      chrome.tabs.create({ url: bk.url, active: false });
+    }
+  });
+
+  const favicon = document.createElement('img');
+  favicon.className = `recent-favicon${bk.faviconLight ? ' favicon-light' : ''}`;
+  favicon.src = bk.favIconUrl || `https://www.google.com/s2/favicons?domain=${bk.domain}&sz=16`;
+  favicon.width = 16;
+  favicon.height = 16;
+  favicon.alt = '';
+  favicon.onerror = () => { favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect fill="%234fc3f7" width="16" height="16" rx="3"/></svg>'; };
+
+  const title = document.createElement('span');
+  title.className = 'recent-title';
+  title.textContent = bk.title;
+
+  item.appendChild(favicon);
+  item.appendChild(title);
+  return item;
+}
+
 async function renderRecent() {
   const all = await getAllBookmarks();
-  recentBookmarks = all
+
+  const added = [...all]
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 3);
 
+  const visited = [...all]
+    .filter(bk => bk.lastVisitedAt)
+    .sort((a, b) => b.lastVisitedAt - a.lastVisitedAt)
+    .slice(0, 3);
+
+  recentBookmarks = added;
   recentSection.innerHTML = '';
   selectedRecentIndex = -1;
 
-  if (recentBookmarks.length === 0) return;
+  if (added.length === 0) return;
 
   const label = document.createElement('div');
   label.className = 'recent-section-label';
   label.innerHTML = '<span class="recent-section-dot"></span> RECENT';
   recentSection.appendChild(label);
 
-  const list = document.createElement('div');
-  list.className = 'recent-list';
+  const columns = document.createElement('div');
+  columns.className = 'recent-columns';
 
-  for (const bk of recentBookmarks) {
-    const item = document.createElement('a');
-    item.className = 'recent-item';
-    item.href = bk.url;
-    item.title = bk.url;
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: bk.url });
-    });
-    item.addEventListener('auxclick', (e) => {
-      if (e.button === 1) {
-        e.preventDefault();
-        chrome.tabs.create({ url: bk.url, active: false });
-      }
-    });
+  const addedCol = document.createElement('div');
+  addedCol.className = 'recent-column recent-column--added';
 
-    const favicon = document.createElement('img');
-    favicon.className = `recent-favicon${bk.faviconLight ? ' favicon-light' : ''}`;
-    favicon.src = bk.favIconUrl || `https://www.google.com/s2/favicons?domain=${bk.domain}&sz=16`;
-    favicon.width = 16;
-    favicon.height = 16;
-    favicon.alt = '';
-    favicon.onerror = () => { favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect fill="%234fc3f7" width="16" height="16" rx="3"/></svg>'; };
+  const addedColLabel = document.createElement('div');
+  addedColLabel.className = 'recent-column-label';
+  addedColLabel.textContent = 'Added';
+  addedCol.appendChild(addedColLabel);
 
-    const title = document.createElement('span');
-    title.className = 'recent-title';
-    title.textContent = bk.title;
+  const addedList = document.createElement('div');
+  addedList.className = 'recent-list';
+  for (const bk of added) addedList.appendChild(buildRecentItem(bk));
+  addedCol.appendChild(addedList);
+  columns.appendChild(addedCol);
 
-    item.appendChild(favicon);
-    item.appendChild(title);
-    list.appendChild(item);
+  if (visited.length > 0) {
+    const visitedCol = document.createElement('div');
+    visitedCol.className = 'recent-column recent-column--visited';
+
+    const visitedColLabel = document.createElement('div');
+    visitedColLabel.className = 'recent-column-label';
+    visitedColLabel.textContent = 'Visited';
+    visitedCol.appendChild(visitedColLabel);
+
+    const visitedList = document.createElement('div');
+    visitedList.className = 'recent-list';
+    for (const bk of visited) visitedList.appendChild(buildRecentItem(bk));
+    visitedCol.appendChild(visitedList);
+    columns.appendChild(visitedCol);
   }
 
-  recentSection.appendChild(list);
+  recentSection.appendChild(columns);
 }
 
 // --- Refresh ---

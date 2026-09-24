@@ -647,6 +647,26 @@ body {
   background: var(--green, #22c55e);
 }
 
+.recent-columns {
+  display: flex;
+  gap: 4px;
+}
+
+.recent-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-column-label {
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 12px 4px;
+  opacity: 0.65;
+}
+
 .recent-list {
   display: flex;
   flex-direction: column;
@@ -739,6 +759,13 @@ body {
   font-size: 10px;
   opacity: 0.6;
   font-weight: var(--weight-medium);
+}
+
+.tag-grid-more {
+  color: var(--text-dim) !important;
+  background: transparent !important;
+  border-color: var(--border) !important;
+  opacity: 0.7;
 }
 
 .tag-grid-empty {

@@ -29,10 +29,10 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
     updateSelection();
   }
 
-  function openSelected() {
+  async function openSelected() {
     if (selectedIndex < 0 || selectedIndex >= currentBookmarks.length) return false;
     const bk = currentBookmarks[selectedIndex];
-    incrementVisitCount(bk.id);
+    await incrementVisitCount(bk.id);
     chrome.tabs.create({ url: bk.url });
     return true;
   }
@@ -138,15 +138,15 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
       item.appendChild(actions);
 
       // Click to open in new tab
-      item.addEventListener('click', () => {
-        incrementVisitCount(bk.id);
+      item.addEventListener('click', async () => {
+        await incrementVisitCount(bk.id);
         chrome.tabs.create({ url: bk.url });
       });
 
-      item.addEventListener('auxclick', (e) => {
+      item.addEventListener('auxclick', async (e) => {
         if (e.button === 1) {
           e.preventDefault();
-          incrementVisitCount(bk.id);
+          await incrementVisitCount(bk.id);
           chrome.tabs.create({ url: bk.url, active: false });
         }
       });

@@ -129,8 +129,8 @@ export function createSpeedDial({ onEdit, onEmptySlotClick }) {
         await render();
       });
 
-      tile.addEventListener('click', () => {
-        incrementVisitCount(slot.id);
+      tile.addEventListener('click', async () => {
+        await incrementVisitCount(slot.id);
         chrome.tabs.create({ url: slot.url });
       });
       tile.addEventListener('contextmenu', (e) => {
