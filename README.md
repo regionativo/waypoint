@@ -10,6 +10,7 @@ A Chrome extension that replaces traditional bookmarks with a tag-based system. 
 - **Quick capture** — Save the current page with one click or `Cmd+S`. Auto-suggests tags based on domain history.
 - **Manage page** — Full-page tag treemap visualization with drill-down. Bulk edit, delete, add/remove tags.
 - **Import/Export** — Import from Chrome bookmarks (folders become tags) or from a JSON file. Export to JSON for backup or transfer to another browser.
+- **Configurable tab behavior** — Choose whether opening a bookmark always opens a new tab, always reuses the current tab, or reuses the current tab only when it's a blank new-tab page (Manage page → Settings).
 
 ## Install
 

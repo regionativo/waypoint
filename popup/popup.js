@@ -1,5 +1,6 @@
 import { initialize } from '../lib/storage.js';
 import { getAllBookmarks, getSpeedDial, deleteBookmark, getBookmarkByUrl, setSpeedDialSlot, incrementVisitCount } from '../lib/bookmarks.js';
+import { openBookmark } from '../lib/open.js';
 import { buildIndex, search } from '../lib/search.js';
 import { renameTag, deleteTag, getAllTags } from '../lib/tags.js';
 import { createSearchBar } from './components/search-bar.js';
@@ -641,7 +642,7 @@ document.addEventListener('keydown', async (e) => {
   if (e.key === 'Enter') {
     if (selectedRecentIndex >= 0 && selectedRecentIndex < recentBookmarks.length) {
       e.preventDefault();
-      chrome.tabs.create({ url: recentBookmarks[selectedRecentIndex].url });
+      await openBookmark(recentBookmarks[selectedRecentIndex].url);
       return;
     }
     if (tagGridVisible && selectedTagIndex >= 0) {
@@ -739,7 +740,7 @@ async function openSpeedDialSlot(slot) {
   const slots = await getSpeedDial();
   const bk = slots[slot];
   if (bk) {
-    chrome.tabs.create({ url: bk.url });
+    await openBookmark(bk.url);
   }
 }
 
@@ -781,7 +782,7 @@ function buildRecentItem(bk) {
   item.addEventListener('click', async (e) => {
     e.preventDefault();
     await incrementVisitCount(bk.id);
-    chrome.tabs.create({ url: bk.url });
+    await openBookmark(bk.url);
   });
   item.addEventListener('auxclick', async (e) => {
     if (e.button === 1) {

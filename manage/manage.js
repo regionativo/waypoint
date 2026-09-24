@@ -2,6 +2,7 @@ import { initialize, get, set } from '../lib/storage.js';
 import { getAllBookmarks, deleteBookmark, saveBookmark, updateFavicon, getSpeedDial, setSpeedDialSlot } from '../lib/bookmarks.js';
 import { normalizeTag, getAllTags, deleteTag } from '../lib/tags.js';
 import { THEMES, getTheme, setTheme, loadTheme } from '../lib/theme.js';
+import { OPEN_MODES, getOpenMode, setOpenMode } from '../lib/open.js';
 import { importChromeBookmarks, getImportPreview, importFromJSON } from '../lib/importer.js';
 
 let allBookmarks = [];
@@ -884,10 +885,30 @@ async function renderThemePicker() {
   }
 }
 
+// ── Open mode picker ──
+
+async function renderOpenModePicker() {
+  const select = document.getElementById('open-mode-select');
+  const currentMode = await getOpenMode();
+  select.innerHTML = '';
+
+  for (const mode of OPEN_MODES) {
+    const option = document.createElement('option');
+    option.value = mode.id;
+    option.textContent = mode.name;
+    option.title = mode.description;
+    select.appendChild(option);
+  }
+  select.value = currentMode;
+
+  select.addEventListener('change', () => setOpenMode(select.value));
+}
+
 // ── Init ──
 
 initialize().then(async () => {
   await loadTheme();
   await load();
   renderThemePicker();
+  renderOpenModePicker();
 });

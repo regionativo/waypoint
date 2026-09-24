@@ -1,4 +1,5 @@
 import { incrementVisitCount, deleteBookmark } from '../../lib/bookmarks.js';
+import { openBookmark } from '../../lib/open.js';
 
 export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
   const container = document.createElement('div');
@@ -33,7 +34,7 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
     if (selectedIndex < 0 || selectedIndex >= currentBookmarks.length) return false;
     const bk = currentBookmarks[selectedIndex];
     await incrementVisitCount(bk.id);
-    chrome.tabs.create({ url: bk.url });
+    await openBookmark(bk.url);
     return true;
   }
 
@@ -140,7 +141,7 @@ export function createBookmarkList({ onTagClick, onEdit, onDelete }) {
       // Click to open in new tab
       item.addEventListener('click', async () => {
         await incrementVisitCount(bk.id);
-        chrome.tabs.create({ url: bk.url });
+        await openBookmark(bk.url);
       });
 
       item.addEventListener('auxclick', async (e) => {

@@ -1,4 +1,5 @@
 import { getSpeedDial, incrementVisitCount, setSpeedDialSlot } from '../../lib/bookmarks.js';
+import { openBookmark } from '../../lib/open.js';
 
 export function createSpeedDial({ onEdit, onEmptySlotClick }) {
   const container = document.createElement('div');
@@ -131,7 +132,7 @@ export function createSpeedDial({ onEdit, onEmptySlotClick }) {
 
       tile.addEventListener('click', async () => {
         await incrementVisitCount(slot.id);
-        chrome.tabs.create({ url: slot.url });
+        await openBookmark(slot.url);
       });
       tile.addEventListener('contextmenu', (e) => {
         e.preventDefault();
